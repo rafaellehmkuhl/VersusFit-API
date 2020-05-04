@@ -49,6 +49,10 @@ class ObjetivosResource(Resource):
 
 
 class ObjetivoResource(Resource):
+    def get(self, objetivo_id):
+        objetivo = Objetivo.query.get_or_404(objetivo_id)
+        return objetivo_schema.dump(objetivo)
+
     def patch(self, objetivo_id):
         objetivo = Objetivo.query.get_or_404(objetivo_id)
         objetivo.status = request.json['status']
