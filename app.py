@@ -66,8 +66,15 @@ class ObjetivoResource(Resource):
         return '', 204
 
 
+class CompetidorResource(Resource):
+    def get(self, competidor_name):
+        objetivos = Objetivo.query.filter_by(competidor=competidor_name)
+        return objetivos_schema.dump(objetivos)
+
+
 api.add_resource(ObjetivosResource, '/')
 api.add_resource(ObjetivoResource, '/<int:objetivo_id>')
+api.add_resource(CompetidorResource, '/<string:competidor_name>')
 
 if __name__ == '__main__':
     app.run(debug=True)
