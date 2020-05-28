@@ -11,68 +11,86 @@ app.config.from_pyfile('config.cfg')
 db = SQLAlchemy(app)
 
 
-class Objetivo(db.Model):
+class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    tarefa = db.Column(db.String(50), nullable=False)
-    competidor = db.Column(db.String(20), nullable=False)
-    status = db.Column(db.Boolean, nullable=False)
+    name = db.Column(db.String(20), nullable=False)
+    creation_date = db.Column(
+        db.DateTime, nullable=False, default=datetime.utcnow)
+
+    goals = db.relationship('Goal', backref='user', lazy='dynamic')
 
     def __repr__(self):
-        return f'<Objetivo {self.id}>'
+        return f'<User {self.name}>'
 
 
-class ObjetivoSchema(Schema):
+class Goal(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(30), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    dom_status = db.Column(db.Boolean, nullable=False, default=False)
+    seg_status = db.Column(db.Boolean, nullable=False, default=False)
+    ter_status = db.Column(db.Boolean, nullable=False, default=False)
+    qua_status = db.Column(db.Boolean, nullable=False, default=False)
+    qui_status = db.Column(db.Boolean, nullable=False, default=False)
+    sex_status = db.Column(db.Boolean, nullable=False, default=False)
+    sab_status = db.Column(db.Boolean, nullable=False, default=False)
+
+    def __repr__(self):
+        return f'<Goal {self.name}>'
+
+
+class GoalSchema(Schema):
     class Meta:
         fields = ('id', 'tarefa', 'competidor', 'status')
 
 
-objetivo_schema = ObjetivoSchema()
-objetivos_schema = ObjetivoSchema(many=True)
+goal_schema = GoalSchema()
+goals_schema = GoalSchema(many=True)
 
 
-class ObjetivosResource(Resource):
-    def get(self):
-        objetivos = Objetivo.query.all()
-        return objetivos_schema.dump(objetivos)
+class GoalResource(Resource):
+    def get(self, goal_id):
+        goal = Goal.query.get_or_404(goal_id)
+        return goal_schema.dump(goal)
 
-    def post(self):
-        objetivo_json = request.get_json()
-        new_objetivo = Objetivo(
-            tarefa=objetivo_json['tarefa'],
-            competidor=objetivo_json['competidor'],
-            status=False
-        )
-        db.session.add(new_objetivo)
+    def patch(self, goal_id):
+        goal = Goal.query.get_or_404(goal_id)
+        goal.status = request.json['status']
         db.session.commit()
-        return objetivo_schema.dump(new_objetivo)
+        return goal_schema.dump(goal)
 
-
-class ObjetivoResource(Resource):
-    def get(self, objetivo_id):
-        objetivo = Objetivo.query.get_or_404(objetivo_id)
-        return objetivo_schema.dump(objetivo)
-
-    def patch(self, objetivo_id):
-        objetivo = Objetivo.query.get_or_404(objetivo_id)
-        objetivo.status = request.json['status']
-        db.session.commit()
-        return objetivo_schema.dump(objetivo)
-
-    def delete(self, objetivo_id):
-        objetivo = Objetivo.query.get_or_404(objetivo_id)
-        db.session.delete(objetivo)
+    def delete(self, goal_id):
+        goal = Goal.query.get_or_404(goal_id)
+        db.session.delete(goal)
         db.session.commit()
         return '', 204
 
 
+class GoalsResource(Resource):
+    def get(self):
+        goals = Goal.query.all()
+        return goals_schema.dump(goals)
+
+    def post(self):
+        goal_json = request.get_json()
+        new_goal = Goal(
+            tarefa=goal_json['tarefa'],
+            competidor=goal_json['competidor'],
+            status=False
+        )
+        db.session.add(new_goal)
+        db.session.commit()
+        return goal_schema.dump(new_goal)
+
+
 class CompetidorResource(Resource):
     def get(self, competidor_name):
-        objetivos = Objetivo.query.filter_by(competidor=competidor_name)
-        return objetivos_schema.dump(objetivos)
+        goals = Goal.query.filter_by(competidor=competidor_name)
+        return goals_schema.dump(goals)
 
 
-api.add_resource(ObjetivosResource, '/')
-api.add_resource(ObjetivoResource, '/<int:objetivo_id>')
+api.add_resource(GoalsResource, '/')
+api.add_resource(GoalResource, '/<int:goal_id>')
 api.add_resource(CompetidorResource, '/<string:competidor_name>')
 
 if __name__ == '__main__':
