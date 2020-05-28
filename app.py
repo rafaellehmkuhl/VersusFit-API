@@ -1,7 +1,7 @@
 from flask import Flask, request
 from flask_restful import Resource, Api
 from flask_sqlalchemy import SQLAlchemy
-from marshmallow import Schema
+from flask_marsmallow import Marshmallow
 from flask_cors import CORS
 
 app = Flask(__name__)
@@ -9,6 +9,7 @@ CORS(app)
 api = Api(app)
 app.config.from_pyfile('config.cfg')
 db = SQLAlchemy(app)
+ma = Marshmallow(app)
 
 
 class User(db.Model):
@@ -21,6 +22,16 @@ class User(db.Model):
 
     def __repr__(self):
         return f'<User {self.name}>'
+
+
+class UserSchema(ma.SQLAlchemyAutoSchema):
+    class Meta:
+        model = User
+        include_fk = True
+
+
+user_schema = UserSchema(strict=True)
+users_schema = UserSchema(strict=True, many=True)
 
 
 class Goal(db.Model):
@@ -39,13 +50,14 @@ class Goal(db.Model):
         return f'<Goal {self.name}>'
 
 
-class GoalSchema(Schema):
+class GoalSchema(ma.SQLAlchemyAutoSchema):
     class Meta:
-        fields = ('id', 'tarefa', 'competidor', 'status')
+        model = Goal
+        include_fk = True
 
 
-goal_schema = GoalSchema()
-goals_schema = GoalSchema(many=True)
+goal_schema = GoalSchema(strict=True)
+goals_schema = GoalSchema(strict=True, many=True)
 
 
 class GoalResource(Resource):
