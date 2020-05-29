@@ -146,7 +146,13 @@ class UserGoalsResource(Resource):
         return goal_schema.dump(new_goal)
 
 
+class IndexResource(Resource):
+    def get(self):
+        return 'Welcome to the VersusFit API'
+
+
 # api.add_resource(GoalsResource, '/')
+api.add_resource(IndexResource, '/')
 api.add_resource(UsersResource, '/users')
 api.add_resource(UserResource, '/user/<string:user_id>')
 api.add_resource(GoalResource, '/goal/<int:goal_id>')
