@@ -1,7 +1,7 @@
 from flask import Flask, request
 from flask_restful import Resource, Api
 from flask_sqlalchemy import SQLAlchemy
-from flask_marshmallow import Marshmallow
+from marshmallow import Schema, fields
 from flask_cors import CORS
 
 app = Flask(__name__)
@@ -9,7 +9,6 @@ CORS(app)
 api = Api(app)
 app.config.from_pyfile('config.cfg')
 db = SQLAlchemy(app)
-ma = Marshmallow(app)
 
 
 class User(db.Model):
