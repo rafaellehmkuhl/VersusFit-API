@@ -38,13 +38,13 @@ class Goal(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(30), nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    dom_status = db.Column(db.Boolean, nullable=False, default=False)
-    seg_status = db.Column(db.Boolean, nullable=False, default=False)
-    ter_status = db.Column(db.Boolean, nullable=False, default=False)
-    qua_status = db.Column(db.Boolean, nullable=False, default=False)
-    qui_status = db.Column(db.Boolean, nullable=False, default=False)
-    sex_status = db.Column(db.Boolean, nullable=False, default=False)
-    sab_status = db.Column(db.Boolean, nullable=False, default=False)
+    dom_status = db.Column(db.Boolean(), nullable=False, default=False)
+    seg_status = db.Column(db.Boolean(), nullable=False, default=False)
+    ter_status = db.Column(db.Boolean(), nullable=False, default=False)
+    qua_status = db.Column(db.Boolean(), nullable=False, default=False)
+    qui_status = db.Column(db.Boolean(), nullable=False, default=False)
+    sex_status = db.Column(db.Boolean(), nullable=False, default=False)
+    sab_status = db.Column(db.Boolean(), nullable=False, default=False)
 
     def __repr__(self):
         return f'<Goal {self.name}>'
