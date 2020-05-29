@@ -24,16 +24,6 @@ class User(db.Model):
         return f'<User {self.name}>'
 
 
-class UserSchema(ma.SQLAlchemyAutoSchema):
-    class Meta:
-        model = User
-        include_fk = True
-
-
-user_schema = UserSchema(strict=True)
-users_schema = UserSchema(strict=True, many=True)
-
-
 class Goal(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(30), nullable=False)
@@ -50,14 +40,30 @@ class Goal(db.Model):
         return f'<Goal {self.name}>'
 
 
-class GoalSchema(ma.SQLAlchemyAutoSchema):
-    class Meta:
-        model = Goal
-        include_fk = True
+class GoalSchema(Schema):
+    id = fields.Int(dump_only=True)
+    name = fields.String()
+    dom_status = fields.Boolean()
+    seg_status = fields.Boolean()
+    ter_status = fields.Boolean()
+    qua_status = fields.Boolean()
+    qui_status = fields.Boolean()
+    sex_status = fields.Boolean()
+    sab_status = fields.Boolean()
 
 
-goal_schema = GoalSchema(strict=True)
-goals_schema = GoalSchema(strict=True, many=True)
+class UserSchema(Schema):
+    id = fields.Int(dump_only=True)
+    name = fields.String()
+    creation_date = fields.DateTime()
+    # goals = fields.Nested(GoalSchema, many=True)
+
+
+goal_schema = GoalSchema()
+goals_schema = GoalSchema(many=True)
+
+user_schema = UserSchema()
+users_schema = UserSchema(many=True)
 
 
 class GoalResource(Resource):
