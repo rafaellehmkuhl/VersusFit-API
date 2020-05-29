@@ -27,6 +27,7 @@ class User(db.Model):
 class Goal(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(30), nullable=False)
+    repetitions = db.Column(db.Integer(), nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     dom_status = db.Column(db.Boolean(), nullable=False, default=False)
     seg_status = db.Column(db.Boolean(), nullable=False, default=False)
@@ -43,6 +44,7 @@ class Goal(db.Model):
 class GoalSchema(Schema):
     id = fields.Int(dump_only=True)
     name = fields.String()
+    repetitions = fields.Int()
     dom_status = fields.Boolean()
     seg_status = fields.Boolean()
     ter_status = fields.Boolean()
@@ -139,6 +141,7 @@ class UserGoalsResource(Resource):
         goal_json = request.get_json()
         new_goal = Goal(
             name=goal_json['name'],
+            repetitions=goal_json['repetitions'],
             user=user
         )
         db.session.add(new_goal)
