@@ -71,45 +71,86 @@ class GoalResource(Resource):
         goal = Goal.query.get_or_404(goal_id)
         return goal_schema.dump(goal)
 
-    def patch(self, goal_id):
-        goal = Goal.query.get_or_404(goal_id)
-        goal.status = request.json['status']
-        db.session.commit()
-        return goal_schema.dump(goal)
-
     def delete(self, goal_id):
         goal = Goal.query.get_or_404(goal_id)
         db.session.delete(goal)
         db.session.commit()
         return '', 204
 
+    def patch(self, goal_id):
+        goal = Goal.query.get_or_404(goal_id)
 
-class GoalsResource(Resource):
+        try:
+            weekday = request.get_json()['weekday']
+        except KeyError as e:
+            return 'Weekday key does not exist in json package', 404
+
+        if (weekday == 'dom'):
+            day_status = goal.dom_status = not goal.dom_status
+        elif (weekday == 'seg'):
+            day_status = goal.seg_status = not goal.seg_status
+        elif (weekday == 'ter'):
+            day_status = goal.ter_status = not goal.ter_status
+        elif (weekday == 'qua'):
+            day_status = goal.qua_status = not goal.qua_status
+        elif (weekday == 'qui'):
+            day_status = goal.qui_status = not goal.qui_status
+        elif (weekday == 'sex'):
+            day_status = goal.sex_status = not goal.sex_status
+        elif (weekday == 'sab'):
+            day_status = goal.sab_status = not goal.sab_status
+        else:
+            return 'Try one of the following values for weekday: dom, seg, ter, qua, qui, sex, sab', 404
+
+        db.session.commit()
+
+        return goal_schema.dump(goal)
+
+
+class UserResource(Resource):
+    def get(self, user_id):
+        user = User.query.get_or_404(user_id)
+        return user_schema.dump(user)
+
+
+class UsersResource(Resource):
     def get(self):
-        goals = Goal.query.all()
-        return goals_schema.dump(goals)
+        users = User.query.all()
+        return users_schema.dump(users)
 
     def post(self):
+        new_user_json = request.get_json()
+        new_user = User(
+            name=new_user_json['name'],
+        )
+        db.session.add(new_user)
+        db.session.commit()
+        return user_schema.dump(new_user)
+
+
+class UserGoalsResource(Resource):
+    def get(self, user_id):
+        user = User.query.get_or_404(user_id)
+        goals = user.goals.all()
+        return goals_schema.dump(goals)
+
+    def post(self, user_id):
+        user = User.query.get_or_404(user_id)
         goal_json = request.get_json()
         new_goal = Goal(
-            tarefa=goal_json['tarefa'],
-            competidor=goal_json['competidor'],
-            status=False
+            name=goal_json['name'],
+            user=user
         )
         db.session.add(new_goal)
         db.session.commit()
         return goal_schema.dump(new_goal)
 
 
-class CompetidorResource(Resource):
-    def get(self, competidor_name):
-        goals = Goal.query.filter_by(competidor=competidor_name)
-        return goals_schema.dump(goals)
-
-
-api.add_resource(GoalsResource, '/')
-api.add_resource(GoalResource, '/<int:goal_id>')
-api.add_resource(CompetidorResource, '/<string:competidor_name>')
+# api.add_resource(GoalsResource, '/')
+api.add_resource(UsersResource, '/users')
+api.add_resource(UserResource, '/user/<string:user_id>')
+api.add_resource(GoalResource, '/goal/<int:goal_id>')
+api.add_resource(UserGoalsResource, '/user_goals/<string:user_id>')
 
 if __name__ == '__main__':
     app.run(debug=True)
