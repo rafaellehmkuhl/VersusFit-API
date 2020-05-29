@@ -1,8 +1,9 @@
 from flask import Flask, request
 from flask_restful import Resource, Api
 from flask_sqlalchemy import SQLAlchemy
-from marshmallow import Schema
+from marshmallow import Schema, fields
 from flask_cors import CORS
+from datetime import datetime
 
 app = Flask(__name__)
 CORS(app)
@@ -11,69 +12,145 @@ app.config.from_pyfile('config.cfg')
 db = SQLAlchemy(app)
 
 
-class Objetivo(db.Model):
+class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    tarefa = db.Column(db.String(50), nullable=False)
-    competidor = db.Column(db.String(20), nullable=False)
-    status = db.Column(db.Boolean, nullable=False)
+    name = db.Column(db.String(20), nullable=False)
+    creation_date = db.Column(
+        db.DateTime, nullable=False, default=datetime.utcnow)
+
+    goals = db.relationship('Goal', backref='user', lazy='dynamic')
 
     def __repr__(self):
-        return f'<Objetivo {self.id}>'
+        return f'<User {self.name}>'
 
 
-class ObjetivoSchema(Schema):
-    class Meta:
-        fields = ('id', 'tarefa', 'competidor', 'status')
+class Goal(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(30), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    dom_status = db.Column(db.Boolean(), nullable=False, default=False)
+    seg_status = db.Column(db.Boolean(), nullable=False, default=False)
+    ter_status = db.Column(db.Boolean(), nullable=False, default=False)
+    qua_status = db.Column(db.Boolean(), nullable=False, default=False)
+    qui_status = db.Column(db.Boolean(), nullable=False, default=False)
+    sex_status = db.Column(db.Boolean(), nullable=False, default=False)
+    sab_status = db.Column(db.Boolean(), nullable=False, default=False)
+
+    def __repr__(self):
+        return f'<Goal {self.name}>'
 
 
-objetivo_schema = ObjetivoSchema()
-objetivos_schema = ObjetivoSchema(many=True)
+class GoalSchema(Schema):
+    id = fields.Int(dump_only=True)
+    name = fields.String()
+    dom_status = fields.Boolean()
+    seg_status = fields.Boolean()
+    ter_status = fields.Boolean()
+    qua_status = fields.Boolean()
+    qui_status = fields.Boolean()
+    sex_status = fields.Boolean()
+    sab_status = fields.Boolean()
 
 
-class ObjetivosResource(Resource):
-    def get(self):
-        objetivos = Objetivo.query.all()
-        return objetivos_schema.dump(objetivos)
-
-    def post(self):
-        objetivo_json = request.get_json()
-        new_objetivo = Objetivo(
-            tarefa=objetivo_json['tarefa'],
-            competidor=objetivo_json['competidor'],
-            status=False
-        )
-        db.session.add(new_objetivo)
-        db.session.commit()
-        return objetivo_schema.dump(new_objetivo)
+class UserSchema(Schema):
+    id = fields.Int(dump_only=True)
+    name = fields.String()
+    creation_date = fields.DateTime()
+    # goals = fields.Nested(GoalSchema, many=True)
 
 
-class ObjetivoResource(Resource):
-    def get(self, objetivo_id):
-        objetivo = Objetivo.query.get_or_404(objetivo_id)
-        return objetivo_schema.dump(objetivo)
+goal_schema = GoalSchema()
+goals_schema = GoalSchema(many=True)
 
-    def patch(self, objetivo_id):
-        objetivo = Objetivo.query.get_or_404(objetivo_id)
-        objetivo.status = request.json['status']
-        db.session.commit()
-        return objetivo_schema.dump(objetivo)
+user_schema = UserSchema()
+users_schema = UserSchema(many=True)
 
-    def delete(self, objetivo_id):
-        objetivo = Objetivo.query.get_or_404(objetivo_id)
-        db.session.delete(objetivo)
+
+class GoalResource(Resource):
+    def get(self, goal_id):
+        goal = Goal.query.get_or_404(goal_id)
+        return goal_schema.dump(goal)
+
+    def delete(self, goal_id):
+        goal = Goal.query.get_or_404(goal_id)
+        db.session.delete(goal)
         db.session.commit()
         return '', 204
 
+    def patch(self, goal_id):
+        goal = Goal.query.get_or_404(goal_id)
 
-class CompetidorResource(Resource):
-    def get(self, competidor_name):
-        objetivos = Objetivo.query.filter_by(competidor=competidor_name)
-        return objetivos_schema.dump(objetivos)
+        try:
+            weekday = request.get_json()['weekday']
+        except KeyError as e:
+            return 'Weekday key does not exist in json package', 404
+
+        if (weekday == 'dom'):
+            day_status = goal.dom_status = not goal.dom_status
+        elif (weekday == 'seg'):
+            day_status = goal.seg_status = not goal.seg_status
+        elif (weekday == 'ter'):
+            day_status = goal.ter_status = not goal.ter_status
+        elif (weekday == 'qua'):
+            day_status = goal.qua_status = not goal.qua_status
+        elif (weekday == 'qui'):
+            day_status = goal.qui_status = not goal.qui_status
+        elif (weekday == 'sex'):
+            day_status = goal.sex_status = not goal.sex_status
+        elif (weekday == 'sab'):
+            day_status = goal.sab_status = not goal.sab_status
+        else:
+            return 'Try one of the following values for weekday: dom, seg, ter, qua, qui, sex, sab', 404
+
+        db.session.commit()
+
+        return goal_schema.dump(goal)
 
 
-api.add_resource(ObjetivosResource, '/')
-api.add_resource(ObjetivoResource, '/<int:objetivo_id>')
-api.add_resource(CompetidorResource, '/<string:competidor_name>')
+class UserResource(Resource):
+    def get(self, user_id):
+        user = User.query.get_or_404(user_id)
+        return user_schema.dump(user)
+
+
+class UsersResource(Resource):
+    def get(self):
+        users = User.query.all()
+        return users_schema.dump(users)
+
+    def post(self):
+        new_user_json = request.get_json()
+        new_user = User(
+            name=new_user_json['name'],
+        )
+        db.session.add(new_user)
+        db.session.commit()
+        return user_schema.dump(new_user)
+
+
+class UserGoalsResource(Resource):
+    def get(self, user_id):
+        user = User.query.get_or_404(user_id)
+        goals = user.goals.all()
+        return goals_schema.dump(goals)
+
+    def post(self, user_id):
+        user = User.query.get_or_404(user_id)
+        goal_json = request.get_json()
+        new_goal = Goal(
+            name=goal_json['name'],
+            user=user
+        )
+        db.session.add(new_goal)
+        db.session.commit()
+        return goal_schema.dump(new_goal)
+
+
+# api.add_resource(GoalsResource, '/')
+api.add_resource(UsersResource, '/users')
+api.add_resource(UserResource, '/user/<string:user_id>')
+api.add_resource(GoalResource, '/goal/<int:goal_id>')
+api.add_resource(UserGoalsResource, '/user_goals/<string:user_id>')
 
 if __name__ == '__main__':
     app.run(debug=True)
