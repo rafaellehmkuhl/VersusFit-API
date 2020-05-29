@@ -1,7 +1,7 @@
 from flask import Flask, request
 from flask_restful import Resource, Api
 from flask_sqlalchemy import SQLAlchemy
-from flask_marsmallow import Marshmallow
+from flask_marshmallow import Marshmallow
 from flask_cors import CORS
 
 app = Flask(__name__)
