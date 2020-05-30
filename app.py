@@ -43,6 +43,7 @@ class Goal(db.Model):
 
 class GoalSchema(Schema):
     id = fields.Int(dump_only=True)
+    user_id = fields.Int()
     name = fields.String()
     repetitions = fields.Int()
     dom_status = fields.Boolean()
