@@ -13,6 +13,7 @@ marshmallow = "*"
 flask-cors = "*"
 gunicorn = "*"
 psycopg2-binary = "*"
+flask-migrate = "*"
 
 [requires]
 python_version = "3.8"
