@@ -125,13 +125,18 @@ class UsersResource(Resource):
 
     def post(self):
         new_user_json = request.get_json()
-        new_user = User(
-            name=new_user_json['name'],
-            g_id=new_user_json['g_id']
-        )
-        db.session.add(new_user)
-        db.session.commit()
-        return user_schema.dump(new_user)
+        registered_user = User.query.filter_by(
+            g_id=new_user_json['g_id']).first()
+        if registered_user:
+            return user_schema.dump(registered_user)
+        else:
+            new_user = User(
+                name=new_user_json['name'],
+                g_id=new_user_json['g_id']
+            )
+            db.session.add(new_user)
+            db.session.commit()
+            return user_schema.dump(new_user)
 
 
 class UserGoalsResource(Resource):
