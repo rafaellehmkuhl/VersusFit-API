@@ -14,7 +14,7 @@ db = SQLAlchemy(app)
 
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    g_id = db.Column(db.Integer, nullable=True)
+    g_id = db.Column(db.Integer, nullable=False)
     name = db.Column(db.String(20), nullable=False)
     creation_date = db.Column(
         db.DateTime, nullable=False, default=datetime.utcnow)
