@@ -58,7 +58,7 @@ class GoalSchema(Schema):
 
 class UserSchema(Schema):
     id = fields.Int(dump_only=True)
-    g_id = fields.Int()
+    # g_id = fields.Int()
     name = fields.String()
     creation_date = fields.DateTime()
     # goals = fields.Nested(GoalSchema, many=True)
