@@ -153,6 +153,15 @@ class ChallengeResource(Resource):
         challenge = Challenge.query.get_or_404(challenge_id)
         return challenge_schema.dump(challenge)
 
+    def post(self, challenge_id):
+        challenge = Challenge.query.get_or_404(challenge_id)
+        user_id = request.get_json()['userId']
+        user = User.query.get_or_404(user_id)
+        challenge.users.append(user)
+        db.session.commit()
+        return f'User with id {user_id} added to challenge with id {challenge_id}.', 200
+
+
 class ChallengesResource(Resource):
     def get(self):
         challenges = Challenge.query.all()
