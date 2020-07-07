@@ -148,6 +148,12 @@ class GoalResource(Resource):
         return goal_schema.dump(goal)
 
 
+class ChallengeResource(Resource):
+    def get(self, challenge_id):
+        challenge = Challenge.query.get_or_404(challenge_id)
+        return challenge_schema.dump(challenge)
+
+
 class UserResource(Resource):
     def get(self, user_id):
         user = User.query.get_or_404(user_id)
@@ -173,6 +179,13 @@ class UsersResource(Resource):
             db.session.add(new_user)
             db.session.commit()
             return user_schema.dump(new_user)
+
+
+class UserChallengesResource(Resource):
+    def get(self, user_id):
+        user = User.query.get_or_404(user_id)
+        challenges = user.challenges
+        return challenges_schema.dump(challenges)
 
 
 class UserGoalsResource(Resource):
@@ -204,7 +217,9 @@ api.add_resource(IndexResource, '/')
 api.add_resource(UsersResource, '/users')
 api.add_resource(UserResource, '/user/<string:user_id>')
 api.add_resource(GoalResource, '/goal/<int:goal_id>')
+api.add_resource(ChallengeResource, '/challenge/<int:challenge_id>')
 api.add_resource(UserGoalsResource, '/user_goals/<string:user_id>')
+api.add_resource(UserChallengesResource, '/user_challenges/<string:user_id>')
 
 if __name__ == '__main__':
     app.run(debug=True)
