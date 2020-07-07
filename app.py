@@ -20,9 +20,31 @@ class User(db.Model):
         db.DateTime, nullable=False, default=datetime.utcnow)
 
     goals = db.relationship('Goal', backref='user', lazy='dynamic')
+    challenges = db.relationship('Challenge', secondary='linkuserchallenge')
 
     def __repr__(self):
         return f'<User {self.name}>'
+
+
+class Challenge(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(20), nullable=False)
+    creation_date = db.Column(
+        db.DateTime, nullable=False, default=datetime.utcnow)
+
+    users = db.relationship('User', secondary='linkuserchallenge')
+    goals = db.relationship('Goal', backref='challenge', lazy='dynamic')
+
+    def __repr__(self):
+        return f'<Challenge {self.name}>'
+
+
+class LinkUserChallenge(db.Model):
+    __tablename__ = 'linkuserchallenge'
+    challenge_id = db.Column(db.Integer, db.ForeignKey(
+        'challenge.id'), primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey(
+        'user.id'), primary_key=True)
 
 
 class Goal(db.Model):
@@ -30,6 +52,8 @@ class Goal(db.Model):
     name = db.Column(db.String(30), nullable=False)
     repetitions = db.Column(db.Integer(), nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    challenge_id = db.Column(db.Integer, db.ForeignKey(
+        'challenge.id'), nullable=False)
     dom_status = db.Column(db.Boolean(), nullable=False, default=False)
     seg_status = db.Column(db.Boolean(), nullable=False, default=False)
     ter_status = db.Column(db.Boolean(), nullable=False, default=False)
@@ -45,6 +69,7 @@ class Goal(db.Model):
 class GoalSchema(Schema):
     id = fields.Int(dump_only=True)
     user_id = fields.Int()
+    challenge_id = fields.Int()
     name = fields.String()
     repetitions = fields.Int()
     dom_status = fields.Boolean()
@@ -64,8 +89,19 @@ class UserSchema(Schema):
     # goals = fields.Nested(GoalSchema, many=True)
 
 
+class ChallengeSchema(Schema):
+    id = fields.Int(dump_only=True)
+    name = fields.String()
+    creation_date = fields.DateTime()
+    users = fields.Nested(UserSchema(only=("id",)), many=True)
+    goals = fields.Nested(GoalSchema(only=("id",)), many=True)
+
+
 goal_schema = GoalSchema()
 goals_schema = GoalSchema(many=True)
+
+challenge_schema = ChallengeSchema()
+challenges_schema = ChallengeSchema(many=True)
 
 user_schema = UserSchema()
 users_schema = UserSchema(many=True)
@@ -112,6 +148,33 @@ class GoalResource(Resource):
         return goal_schema.dump(goal)
 
 
+class ChallengeResource(Resource):
+    def get(self, challenge_id):
+        challenge = Challenge.query.get_or_404(challenge_id)
+        return challenge_schema.dump(challenge)
+
+    def post(self, challenge_id):
+        challenge = Challenge.query.get_or_404(challenge_id)
+        user_id = request.get_json()['userId']
+        user = User.query.get_or_404(user_id)
+        challenge.users.append(user)
+        db.session.commit()
+        return f'User with id {user_id} added to challenge with id {challenge_id}.', 200
+
+
+class ChallengesResource(Resource):
+    def get(self):
+        challenges = Challenge.query.all()
+        return challenges_schema.dump(challenges)
+
+    def post(self):
+        new_challenge_json = request.get_json()
+        new_challenge = Challenge(name=new_challenge_json['name'])
+        db.session.add(new_challenge)
+        db.session.commit()
+        return challenge_schema.dump(new_challenge), 201
+
+
 class UserResource(Resource):
     def get(self, user_id):
         user = User.query.get_or_404(user_id)
@@ -128,7 +191,7 @@ class UsersResource(Resource):
         registered_user = User.query.filter_by(
             g_id=new_user_json['g_id']).first()
         if registered_user:
-            return user_schema.dump(registered_user)
+            return user_schema.dump(registered_user), 200
         else:
             new_user = User(
                 name=new_user_json['name'],
@@ -136,7 +199,14 @@ class UsersResource(Resource):
             )
             db.session.add(new_user)
             db.session.commit()
-            return user_schema.dump(new_user)
+            return user_schema.dump(new_user), 201
+
+
+class UserChallengesResource(Resource):
+    def get(self, user_id):
+        user = User.query.get_or_404(user_id)
+        challenges = user.challenges
+        return challenges_schema.dump(challenges)
 
 
 class UserGoalsResource(Resource):
@@ -151,7 +221,8 @@ class UserGoalsResource(Resource):
         new_goal = Goal(
             name=goal_json['name'],
             repetitions=goal_json['repetitions'],
-            user=user
+            user=user,
+            challenge_id=goal_json['challenge_id'],
         )
         db.session.add(new_goal)
         db.session.commit()
@@ -166,9 +237,12 @@ class IndexResource(Resource):
 # api.add_resource(GoalsResource, '/')
 api.add_resource(IndexResource, '/')
 api.add_resource(UsersResource, '/users')
+api.add_resource(ChallengesResource, '/challenges')
 api.add_resource(UserResource, '/user/<string:user_id>')
 api.add_resource(GoalResource, '/goal/<int:goal_id>')
+api.add_resource(ChallengeResource, '/challenge/<int:challenge_id>')
 api.add_resource(UserGoalsResource, '/user_goals/<string:user_id>')
+api.add_resource(UserChallengesResource, '/user_challenges/<string:user_id>')
 
 if __name__ == '__main__':
     app.run(debug=True)
