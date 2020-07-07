@@ -93,8 +93,8 @@ class ChallengeSchema(Schema):
     id = fields.Int(dump_only=True)
     name = fields.String()
     creation_date = fields.DateTime()
-    users = fields.Nested(UserSchema, many=True)
-    goals = fields.Nested(GoalSchema, many=True)
+    users = fields.Nested(UserSchema(only=("id",)), many=True)
+    goals = fields.Nested(GoalSchema(only=("id",)), many=True)
 
 
 goal_schema = GoalSchema()
@@ -170,7 +170,7 @@ class UsersResource(Resource):
         registered_user = User.query.filter_by(
             g_id=new_user_json['g_id']).first()
         if registered_user:
-            return user_schema.dump(registered_user)
+            return user_schema.dump(registered_user), 200
         else:
             new_user = User(
                 name=new_user_json['name'],
@@ -178,7 +178,7 @@ class UsersResource(Resource):
             )
             db.session.add(new_user)
             db.session.commit()
-            return user_schema.dump(new_user)
+            return user_schema.dump(new_user), 201
 
 
 class UserChallengesResource(Resource):
