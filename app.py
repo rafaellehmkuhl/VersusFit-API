@@ -200,7 +200,8 @@ class UserGoalsResource(Resource):
         new_goal = Goal(
             name=goal_json['name'],
             repetitions=goal_json['repetitions'],
-            user=user
+            user=user,
+            challenge_id=goal_json['challenge_id'],
         )
         db.session.add(new_goal)
         db.session.commit()
