@@ -237,6 +237,7 @@ class IndexResource(Resource):
 # api.add_resource(GoalsResource, '/')
 api.add_resource(IndexResource, '/')
 api.add_resource(UsersResource, '/users')
+api.add_resource(ChallengesResource, '/challenges')
 api.add_resource(UserResource, '/user/<string:user_id>')
 api.add_resource(GoalResource, '/goal/<int:goal_id>')
 api.add_resource(ChallengeResource, '/challenge/<int:challenge_id>')
