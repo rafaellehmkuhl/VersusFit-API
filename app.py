@@ -4,6 +4,7 @@ from flask_sqlalchemy import SQLAlchemy
 from marshmallow import Schema, fields
 from flask_cors import CORS
 from datetime import datetime
+import hashlib
 
 app = Flask(__name__)
 CORS(app, resources={r"/*": {"origins": "*"}})
@@ -188,14 +189,17 @@ class UsersResource(Resource):
 
     def post(self):
         new_user_json = request.get_json()
+        g_id = new_user_json['g_id']
+        hash_gid = int(hashlib.sha256(
+            str(g_id).encode('utf-8')).hexdigest(), 16) % 10**8
         registered_user = User.query.filter_by(
-            g_id=new_user_json['g_id']).first()
+            g_id=hash_gid).first()
         if registered_user:
             return user_schema.dump(registered_user), 200
         else:
             new_user = User(
                 name=new_user_json['name'],
-                g_id=new_user_json['g_id']
+                g_id=hash_gid
             )
             db.session.add(new_user)
             db.session.commit()
