@@ -20,9 +20,31 @@ class User(db.Model):
         db.DateTime, nullable=False, default=datetime.utcnow)
 
     goals = db.relationship('Goal', backref='user', lazy='dynamic')
+    challenges = db.relationship('Challenge', secondary='linkuserchallenge')
 
     def __repr__(self):
         return f'<User {self.name}>'
+
+
+class Challenge(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(20), nullable=False)
+    creation_date = db.Column(
+        db.DateTime, nullable=False, default=datetime.utcnow)
+
+    users = db.relationship('User', secondary='linkuserchallenge')
+    goals = db.relationship('Goal', backref='challenge', lazy='dynamic')
+
+    def __repr__(self):
+        return f'<Challenge {self.name}>'
+
+
+class LinkUserChallenge(db.Model):
+    __tablename__ = 'linkuserchallenge'
+    challenge_id = db.Column(db.Integer, db.ForeignKey(
+        'challenge.id'), primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey(
+        'user.id'), primary_key=True)
 
 
 class Goal(db.Model):
@@ -30,6 +52,8 @@ class Goal(db.Model):
     name = db.Column(db.String(30), nullable=False)
     repetitions = db.Column(db.Integer(), nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    challenge_id = db.Column(db.Integer, db.ForeignKey(
+        'challenge.id'), nullable=False)
     dom_status = db.Column(db.Boolean(), nullable=False, default=False)
     seg_status = db.Column(db.Boolean(), nullable=False, default=False)
     ter_status = db.Column(db.Boolean(), nullable=False, default=False)
