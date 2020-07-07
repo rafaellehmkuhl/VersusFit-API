@@ -88,8 +88,19 @@ class UserSchema(Schema):
     # goals = fields.Nested(GoalSchema, many=True)
 
 
+class ChallengeSchema(Schema):
+    id = fields.Int(dump_only=True)
+    name = fields.String()
+    creation_date = fields.DateTime()
+    users = fields.Nested(UserSchema, many=True)
+    goals = fields.Nested(GoalSchema, many=True)
+
+
 goal_schema = GoalSchema()
 goals_schema = GoalSchema(many=True)
+
+challenge_schema = ChallengeSchema()
+challenges_schema = ChallengeSchema(many=True)
 
 user_schema = UserSchema()
 users_schema = UserSchema(many=True)
