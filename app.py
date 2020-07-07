@@ -14,6 +14,7 @@ db = SQLAlchemy(app)
 
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
+    g_id = db.Column(db.Integer, nullable=False)
     name = db.Column(db.String(20), nullable=False)
     creation_date = db.Column(
         db.DateTime, nullable=False, default=datetime.utcnow)
@@ -57,6 +58,7 @@ class GoalSchema(Schema):
 
 class UserSchema(Schema):
     id = fields.Int(dump_only=True)
+    # g_id = fields.Int()
     name = fields.String()
     creation_date = fields.DateTime()
     # goals = fields.Nested(GoalSchema, many=True)
@@ -123,12 +125,18 @@ class UsersResource(Resource):
 
     def post(self):
         new_user_json = request.get_json()
-        new_user = User(
-            name=new_user_json['name'],
-        )
-        db.session.add(new_user)
-        db.session.commit()
-        return user_schema.dump(new_user)
+        registered_user = User.query.filter_by(
+            g_id=new_user_json['g_id']).first()
+        if registered_user:
+            return user_schema.dump(registered_user)
+        else:
+            new_user = User(
+                name=new_user_json['name'],
+                g_id=new_user_json['g_id']
+            )
+            db.session.add(new_user)
+            db.session.commit()
+            return user_schema.dump(new_user)
 
 
 class UserGoalsResource(Resource):
